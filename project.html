@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Email Validator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #4285F4 0%, #34A853 50%, #FBBC05 100%);
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-md mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full gradient-bg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-envelope text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Gmail Validator</h1>
+                <p class="text-gray-600">Check if an email exists on Gmail's domain</p>
+            </div>
+
+            <!-- Validation Card -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+                <div class="p-6">
+                    <div class="mb-6">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-at text-gray-400"></i>
+                            </div>
+                            <input type="text" id="email" placeholder="example@gmail.com" 
+                                   class="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                        </div>
+                        <p id="email-error" class="mt-1 text-sm text-red-600 hidden"></p>
+                    </div>
+
+                    <button id="validate-btn" class="w-full gradient-bg text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition duration-200 flex items-center justify-center">
+                        <i class="fas fa-search mr-2"></i> Validate Email
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div id="results" class="hidden bg-gray-50 p-6 border-t border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-medium text-gray-800">Validation Results</h3>
+                        <span id="status-badge" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i id="format-icon" class="fas fa-question-circle mr-2 text-gray-400"></i>
+                            <span id="format-text" class="text-sm text-gray-600">Email format</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i id="domain-icon" class="fas fa-question-circle mr-2 text-gray-400"></i>
+                            <span id="domain-text" class="text-sm text-gray-600">Gmail domain</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i id="existence-icon" class="fas fa-question-circle mr-2 text-gray-400"></i>
+                            <span id="existence-text" class="text-sm text-gray-600">Account existence</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">How it works</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>This tool checks if:</p>
+                            <ul class="list-disc pl-5 space-y-1 mt-1">
+                                <li>The email has a valid format</li>
+                                <li>The domain is @gmail.com</li>
+                                <li>The account might exist (simulated)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('email');
+            const validateBtn = document.getElementById('validate-btn');
+            const resultsSection = document.getElementById('results');
+            const emailError = document.getElementById('email-error');
+            
+            const statusBadge = document.getElementById('status-badge');
+            const formatIcon = document.getElementById('format-icon');
+            const formatText = document.getElementById('format-text');
+            const domainIcon = document.getElementById('domain-icon');
+            const domainText = document.getElementById('domain-text');
+            const existenceIcon = document.getElementById('existence-icon');
+            const existenceText = document.getElementById('existence-text');
+
+            validateBtn.addEventListener('click', validateEmail);
+
+            emailInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    validateEmail();
+                }
+            });
+
+            function validateEmail() {
+                // Reset UI
+                emailError.classList.add('hidden');
+                emailInput.classList.remove('border-red-500', 'shake');
+                
+                const email = emailInput.value.trim();
+                
+                if (!email) {
+                    showError("Please enter an email address");
+                    return;
+                }
+
+                // Simple email regex check
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showError("Please enter a valid email address");
+                    return;
+                }
+
+                // Check for gmail domain
+                const domain = email.split('@')[1];
+                const isGmail = domain === 'gmail.com';
+                
+                if (!isGmail) {
+                    showError("Only @gmail.com addresses are supported");
+                    return;
+                }
+
+                // Simulate checking if email exists (in a real app, this would be an API call)
+                // For demo purposes, we'll randomly determine existence
+                const exists = Math.random() > 0.5;
+                
+                // Show results
+                showResults(email, exists);
+            }
+
+            function showError(message) {
+                emailError.textContent = message;
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('border-red-500', 'shake');
+                
+                // Remove shake class after animation completes
+                setTimeout(() => {
+                    emailInput.classList.remove('shake');
+                }, 500);
+            }
+
+            function showResults(email, exists) {
+                // Show the results section if hidden
+                resultsSection.classList.remove('hidden');
+                
+                // Set format check (always valid at this point)
+                setCheckResult(formatIcon, formatText, true, "Valid email format");
+                
+                // Set domain check (always gmail at this point)
+                setCheckResult(domainIcon, domainText, true, "Valid Gmail domain");
+                
+                // Set existence check (simulated)
+                setCheckResult(existenceIcon, existenceText, exists, 
+                              exists ? "Account likely exists" : "Account doesn't exist or can't be verified");
+                
+                // Set overall status
+                if (exists) {
+                    statusBadge.textContent = "Valid";
+                    statusBadge.classList.remove('bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800');
+                    statusBadge.classList.add('bg-green-100', 'text-green-800');
+                } else {
+                    statusBadge.textContent = "Invalid";
+                    statusBadge.classList.remove('bg-green-100', 'text-green-800', 'bg-yellow-100', 'text-yellow-800');
+                    statusBadge.classList.add('bg-red-100', 'text-red-800');
+                }
+                
+                // Pulse animation for the results section
+                resultsSection.classList.add('pulse');
+                setTimeout(() => {
+                    resultsSection.classList.remove('pulse');
+                }, 2000);
+            }
+
+            function setCheckResult(iconElement, textElement, isValid, message) {
+                if (isValid) {
+                    iconElement.classList.remove('fa-question-circle', 'text-gray-400', 'fa-times-circle', 'text-red-500');
+                    iconElement.classList.add('fa-check-circle', 'text-green-500');
+                } else {
+                    iconElement.classList.remove('fa-question-circle', 'text-gray-400', 'fa-check-circle', 'text-green-500');
+                    iconElement.classList.add('fa-times-circle', 'text-red-500');
+                }
+                textElement.textContent = message;
+            }
+        });
+    </script>
+</body>
+</html>
